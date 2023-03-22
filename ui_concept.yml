@@ -69,7 +69,7 @@ User-mode:
 
       people:
         cmd: show people (shows all people)
-        cmd: show people {name or nickname}
+        cmd: show {name or nickname}
         process:
           - "Name: {name}"
           - "Nicknames: {nicknames}"
@@ -135,29 +135,196 @@ User-mode:
           process:
             - "Notes on {name}: {notes}"
             - "New note: [entry field]"
+
+        notes:
           cmd: add notes to {category} {name or page number}
           process:
             - "Notes on {name}: {notes}"
             - {"New note: [entry field]"}*, ""-> exit;
 
+        group:
+          cmd: add group
+          process:
+            - "Group name: [entry field]"
+            - "Group {group name} created."
 
+        people:
+          cmd: add person
+          cmd: add person to page {page number}
+
+        location:
+          cmd: add location
+          cmd: add location to page {page number}
+
+        time:
+          cmd: add time
+          cmd: add time to page {page number}
+
+        narrator:
+          cmd: add narrator
+          cmd: add narrator to page {page number}
+          cmd: {name} is new narrator
+
+        victim:
+          cmd: add victim
+          cmd: add victim to page {page number}
+          cmd: {name} is new victim
+
+        killer:
+          cmd: add killer
+          cmd: add killer to page {page number}
+          cmd: {name} is new killer
+
+        nickname:
+          cmd: add nickname to {name}
 
 
   link existing entities:
     cmd: link
+    subcmds:
+      person:
+        cmd: link person {name} to page {page number}
+        process:
+          - Success/Error Message
+
+      location:
+        cmd: link location {name} to page {page number}
+
+      time:
+        cmd: link time {name} to page {page number}
+
+      group:
+        cmd: link page {page number} to group {group name}
+
+      victim:
+        cmd: victim {name} is {person name}
+
+      killer:
+        cmd: killer {name} is {person name}
+
+      narrator:
+        cmd: narrator {name} is {person name}
+
+      murder:
+        cmd: {killer name} murdered {victim name}
+
+      relations:
+        cmd: order page {number} [directly/sometime] before page {number}
+        cmd: order group {name} [before/after] group {name}
+        cmd: order page {number} [before/after] group {name}
 
 
   change attributes:
     cmd: edit
+    subcmds:
+      page:
+        cmd: edit page {page number} {field}
+        process:
+          - shows old value, prompts to enter new one
+          - "" doesn't change anything
+          - field = "" => all mutable fields are changed in series
+
+      group:
+        cmd: edit group {name} (only one field)
+
+      person:
+        cmd: edit {name}
+
+      nickname:
+        cmd: edit nickname {nickname}
+
+      time:
+        cmd: edit time {name} {field}
+
+      location:
+        cmd: edit location {name} {field}
+
+      narrator:
+        cmd: edit narrator {name}
+
+      victim:
+        cmd: edit victim {name}
+
+      killer:
+        cmd: edit killer {name}
+
+      notes:
+        cmd: edit notes {object} {name or number}
+        process:
+          - list notes numbered
+          - user chooses number, enters new text
+
+      relations:
+        cmd: edit relations
+        process:
+          - list them, user chooses and is prompted for inputs
 
 
   delete entities:
     cmd: remove
+    subcmds:
+      group:
+        cmd: remove group {group name}
+        process:
+          - asking for confirmation + bit of info about group
+          - first relations, then group
+
+      person:
+        cmd: remove {name}
+
+      nickname:
+        cmd: remove nickname {nickname}
+
+      time:
+        cmd: remove time {name}
+
+      location:
+        cmd: remove location {name}
+
+      narrator:
+        cmd: remove narrator {name}
+
+      victim:
+        cmd: remove victim {name}
+
+      killer:
+        cmd: remove killer {name}
+
+      relations:
+        cmd: remove relations
+        process:
+          - list them, user chooses
 
 
-  merge two People:
+
+  unify two entities:
     cmd: merge
+    subcmds:
+      person:
+        cmd: merge person {name1} -> {name2}
+        process:
+          - person1 is added to person2
+          - person1's id's are overwritten with person2's
+          - person1's name becomes person2's nickname
+          - person1 gets deleted
+
+      narrator:
+        cmd: merge narrator {name1} -> {name2}
+        process:
+          - only possible if both link to the same person, or if one has no link
+          - similar process to above
+
+      killer:
+        cmd: merge killer {name1} -> {name2}
+
+      victim:
+        cmd: merge victim {name1} -> {name2}
 
 
   find appearances of strings:
     cmd: find
+    search notes:
+      cmd: find {text} in notes
+
+    search text:
+      cmd: find {text} in text
