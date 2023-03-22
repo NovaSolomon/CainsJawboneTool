@@ -1,0 +1,163 @@
+Dev-mode:
+  new-page:
+    cmd: add new page
+    process:
+      - "Add Page {next page number}? -Y/n"
+      - "n"-> break; "Y"-> proceed;
+      - "Please enter text: [entry field]"
+      - title default - "no title"
+      - kill proximity default - NULL
+      - mode default - ""
+      - tense default - ""
+      - true_page default - "unknown"
+
+  edit-page-text:
+    cmd: edit page text {page number}
+    process:
+      - "Current page text: {page text}"
+      - "New page text: [entry field]"
+      - "Page saved"
+
+  delete-page:
+    cmd: delete page
+    process: 
+      - "This will delete the last saved page, are you sure you wish to proceed? -Y/n"
+      - "n"-> break; "Y"-> "Page {page number} has been deleted."
+
+
+User-mode:
+  get-info:
+    cmd: show
+    subcmds:
+      page:
+        cmd: show page {page number} ({field})
+        process (no field):
+          - "Page: {page number}"
+          - "Title: {page title}"
+          - "Kill proximity: {kill proximity}"
+          - "Mode: {mode}"
+          - "Tense: {tense}"
+          - "True Page: {true_page}"
+          - "{text}"
+          - "Notes: {notes}"
+        process (with field):
+          - "Page: {page number}"
+          - "{field name}: {field value}"
+        tags:
+          - l: light - only number and text
+          - n: notes - only notes
+          - f: full - all links
+          - ol: only links
+
+      pages:
+        cmd: show pages with {name or nickname} {and/or name or nickname}*
+        process (one name):
+          - "Pages with {name}:"
+          - "{page numbers}"
+        process (or):
+          - "Pages with one of {namelist}:"
+          - "{page numbers}"
+        process (and):
+          - "Pages with all of {namelist}:"
+          - "{page numbers}"
+        cmd: show pages at {location} ...
+        cmd: show pages at level {location level} ...
+        cmd: show pages narrated by {narrator} ...
+        cmd: show pages at time {time} ...
+        cmd: show pages at time level {time level} ...
+        cmd: show pages in group {group} ...
+
+      people:
+        cmd: show people (shows all people)
+        cmd: show people {name or nickname}
+        process:
+          - "Name: {name}"
+          - "Nicknames: {nicknames}"
+          - "Appearances: {page numbers}"
+          - Additional status if exists (e.g. "Killer")
+        tags:
+          - g: groups - shows groups, in which person appears
+          - n: nicknames - only nicknames
+        
+      location:
+        cmd: show location {name}
+      
+      locations:
+        cmd: show locations
+        cmd: show locations in group {group name}
+
+      time:
+        cmd: show time {name}
+
+      times:
+        cmd: show times
+        cmd: show times in group {group name}
+
+      killer:
+        cmd: show killer {name}
+
+      killers:
+        cmd: show killers
+        cmd: show killers in group {group name}
+
+      victim:
+        cmd: show victim {name}
+
+      victims:
+        cmd: show victims
+        cmd: show victims in group {group name}
+
+      narrator:
+        cmd: show narrator {name}
+
+      narrators:
+        cmd: show narrators
+        cmd: show narrators in group {group name}
+
+      extra:
+        cmd: show confirmed kills
+        cmd: show known page numbers
+
+      group:
+        cmd: show group {group name}
+
+      groups:
+        cmd: show groups
+        cmd: show groups with {name} ...
+        cmd: show ungrouped pages
+
+
+    make-new-entities:
+      cmd: add
+      subcmds:
+        note:
+          cmd: add note to {category} {name or page number}
+          process:
+            - "Notes on {name}: {notes}"
+            - "New note: [entry field]"
+          cmd: add notes to {category} {name or page number}
+          process:
+            - "Notes on {name}: {notes}"
+            - {"New note: [entry field]"}*, ""-> exit;
+
+
+
+
+  link existing entities:
+    cmd: link
+
+
+  change attributes:
+    cmd: edit
+
+
+  delete entities:
+    cmd: remove
+
+
+  merge two People:
+    cmd: merge
+
+
+  find appearances of strings:
+    cmd: find
