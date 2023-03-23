@@ -90,7 +90,7 @@ Pages_People:
     - primary key
   page_number: int => Pages
     - not null
-  person_number: int => People
+  person_id: int => People
     - not null
 
 Pages_Locations:
