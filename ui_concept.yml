@@ -328,3 +328,6 @@ User-mode:
 
     search text:
       cmd: find {text} in text
+
+  miscellaneous:
+    cmd: drama-graph (lists all pages with their kill proximities)
