@@ -20,12 +20,14 @@ Groups:
     - primary key
   name: char(30)
     - not null
+    - unique
 
 People:
   id: int
     - primary key
   name: char(30)
     - not null
+    - unique
   victim: bool
   killer: bool
   narrator: bool
@@ -35,13 +37,16 @@ Nicknames:
     - primary key
   name: char(30)
     - not null
+    - unique
   person_id: int => People
+    - not null
 
 Locations:
   id: int
     - primary key
   name: char(50)
     - not null
+    - unique
   level: char(30)
 
 Times:
@@ -49,6 +54,7 @@ Times:
     - primary key
   name: char(50)
     - not null
+    - unique
   level: char(30)
 
 Notes:
@@ -101,4 +107,12 @@ Pages_Times:
   page_number: int => Pages
     - not null
   time_id: int => Times
+    - not null
+
+Murders:
+  id: int
+    - primary key
+  killer_id: int => People
+    - not null
+  victim_id: int => People
     - not null
