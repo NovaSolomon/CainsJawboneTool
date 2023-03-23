@@ -1,138 +1,104 @@
 Pages:
-  bookpage: id (physical page number)
-  text: String (Full page text)
-  title: String -optional (brief summary)
-  kill_proximity: int (0 - peaceful, 10 - murder, + before, - after)
-  mode: String -optional (dialogue/action/thoughts/...)
-  tense: String -optional (past/present/future)
-  true_page: String -optional
-
-People:
-  id: id
-  name: String (most official name possible)
-
-Nicknames:
-  id: id
-  name: String
-  people_id: id -> People
-
-Locations:
-  id: id
-  name: String
-  level: String (Room/City/Country/...)
-
-Times:
-  id: id
-  name: String
-  level: String (Date/Season/Year/...)
-
-Narrators:
-  id: id
-  name: String (nickname, if not found)
-  people_id: id -optional -> People
-
-Victims:
-  id: id
-  name: String (nickname, if not found)
-  people_id: id -optional -> People
-
-Killers:
-  id: id
-  name: String (nickname, if not found)
-  people_id: id -optional -> People
+  bookpage: int
+    - primary key
+  booktext: text
+    - not null
+    - Double quotes are stored as $ to avoid syntax clashes
+  title: char(100)
+  kill_prox: int
+    - abs(kill_prox) => 0-10, how close to a kill the story is
+    - sign indicates before (+) or after (-)
+  mode: char(30)
+  tense: char(30)
+  true_page: int
+  killer_id: int => People
+  victim_id: int => People
+  narrator_id: int => People
 
 Groups:
-  id: id
-  name: String
+  id: int
+    - primary key
+  name: char(30)
+    - not null
+
+People:
+  id: int
+    - primary key
+  name: char(30)
+    - not null
+  victim: bool
+  killer: bool
+  narrator: bool
+
+Nicknames:
+  id: int
+    - primary key
+  name: char(30)
+    - not null
+  person_id: int => People
+
+Locations:
+  id: int
+    - primary key
+  name: char(50)
+    - not null
+  level: char(30)
+
+Times:
+  id: int
+    - primary key
+  name: char(50)
+    - not null
+  level: char(30)
+
+Notes:
+  id: int
+    - primary key
+  object: char(20)
+    - not null
+    - example - "group" for a note on a group
+  note_text: text
+    - not null
+  object_id: int => Groups/Pages/People/Locations/Times
+    - not null
+
+Relations:
+  - meaning - group one comes chronologically before group two
+  id: int
+    - primary key
+  group_id1: int => Groups
+    - not null
+  group_id2: int => Groups
+    - not null
+
+Groups_Pages:
+  id: int
+    - primary key
+  group_id: int => Groups
+    - not null
+  page_number: int => Pages
+    - not null
 
 Pages_People:
-  id: id
-  page_id: id -> Pages
-  people_id: id -> People
+  id: int
+    - primary key
+  page_number: int => Pages
+    - not null
+  person_number: int => People
+    - not null
 
 Pages_Locations:
-  id: id
-  page_id: id -> Pages
-  locations_id: id -> Locations
+  id: int
+    - primary key
+  page_number: int => Pages
+    - not null
+  location_id: int => Locations
+    - not null
 
 Pages_Times:
-  id: id
-  page_id: id -> Pages
-  time_id: id -> Times
-
-Pages_Narrators:
-  id: id
-  page_id: id -> Pages
-  narrator_id: id -> Narrators
-
-Pages_Victims:
-  id: id
-  page_id: id -> Pages
-  victim_id: id -> Victims
-
-Pages_Killers:
-  id: id
-  page_id: id -> Pages
-  killer_id: id -> Killers
-
-Victims_Killers:
-  id: id
-  victim_id: id -> Victims
-  killer_id: id -> Killers
-
-Pages_Groups:
-  id: id
-  page_id: id -> Pages
-  group_id: id -> Groups
-
-Page_Relations:
-  id: id
-  page_id1: id -> Pages
-  page_id2: id -> Pages
-  kind: String (relative/direct)
-
-Group_Relations:
-  id: id
-  group_id1: id -> Groups
-  group_id2: id -> Groups
-
-Page_Group_Relations:
-  id: id
-  page_id: id -> Pages
-  group_id: id -> Groups
-  kind: String (before/after)
-
-Page_notes:
-  id: id
-  page_id: id -> Pages
-  note_text: String
-
-People_notes:
-  id: id
-  people_id: id -> People
-  note_text: String
-
-Location_notes:
-  id: id
-  location_id: id -> Locations
-  note_text: String
-
-Narrator_notes:
-  id: id
-  narrator_id: id -> Narrators
-  note_text: String
-
-Victim_notes:
-  id: id
-  victim_id: id -> Victims
-  note_text: String
-
-Killer_notes:
-  id: id
-  killer_id: id -> Killers
-  note_text: String
-
-Group_notes:
-  id: id
-  group_id: id -> Groups
-  note_text: String
+  id: int
+    - primary key
+  page_number: int => Pages
+    - not null
+  time_id: int => Times
+    - not null
