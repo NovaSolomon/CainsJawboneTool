@@ -77,6 +77,15 @@ Relations:
   group_id2: int => Groups
     - not null
 
+Page_Relations:
+  - meaning - page 1 comes directly before page 2
+  id: int
+    - primary key
+  book_page1: int => Page
+    - not null
+  book_page2: int => Page
+    - not null
+
 Groups_Pages:
   id: int
     - primary key
