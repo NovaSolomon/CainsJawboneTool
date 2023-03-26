@@ -58,6 +58,7 @@ User-mode:
     - {killer name} killed {victim name}
 
     - order {group name 1} before {group name 2}
+    - order page {pagenumber 1} before {pagenumber 2}
 
 
   unlink existing entities:
@@ -69,7 +70,8 @@ User-mode:
 
     - edit killer registry
 
-    - remove relations
+    - remove group relations
+    - remove page relations
     
 
   change attributes:
