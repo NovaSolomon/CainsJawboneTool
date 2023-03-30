@@ -1,0 +1,134 @@
+This is a command line tool to assist you in solving the riddle "Cain's Jawbone"
+
+A prompt like ">>>" means, you're in user mode, one like "<?>" indivates, that you are currently in developer mode.
+
+If arguments contain one or more spaces, you must surround them with quotation marks.
+Example:
+>>> show location "London, England"
+
+Here's a list of commands
+=========================
+
+User-mode
+---------
+System commands:
+    dev mode
+    exit
+    back up db
+    list backups
+    save state as backup
+
+Read/list information:
+    show page {page number}
+    show {name}
+    show location {location}
+    show time {time}
+    show group {group}
+    tags:
+        -v: verbose
+        -n: just notes
+        -s: slim (no notes)
+
+    list relations
+    list people
+    list groups [with {field} {value}]     (lists groups where a at least one page fits the description)
+    list locations
+    list times
+
+    list pages with {linked field} {value}
+    list pages where {field} = {value}
+    tags:
+        -s: slim (just page numbers)
+
+    fields:
+        title
+        kill_prox (kill proximity)
+        mode
+        tense
+        true_page
+    linked fields:
+        _ (no field == Person)
+        killer
+        victim
+        narrator
+        location
+        time
+
+
+Make new entities:
+    new person
+    new group
+    new location
+    new time
+
+    add new person to page {page number}
+    add new location to page {page number}
+    add new time to page {page number}
+    add pages to new group
+    add page {page number} to new group
+    add nickname to {name}
+    add note to {category} {indentifier}
+
+
+Link existing entities:
+    add pages to group {group name}
+    add page {page number} to group {group name}
+
+    link {name} to page {page number}
+    link location {name} to page {page number}
+    link time {name} to page {page number}
+
+    solved a murder
+
+    order {group name 1} before {group name 2}
+    order page {pagenumber 1} before {pagenumber 2}
+
+
+Unlink existing entities:
+    remove pages from group {group name}
+
+    remove name from page {page number}
+    remove location from page {page number}
+    remove time from page {page number}
+
+    edit killer registry
+
+    remove group relations
+    remove page relations
+
+
+Change attributes:
+    edit page {page number}
+    edit page {page number} {attribute}
+    edit location {location name}
+    edit location {location name} {attribute}
+    edit time {time name}
+    edit time {time name} {time attribute}
+
+
+Delete entities:
+    remove {person name}
+    remove group {group name}
+    remove location {location name}
+    remove time {time name}
+
+
+Unify two entities:
+    merge groups
+    merge people
+    merge locations
+    merge times
+
+
+Find appearances of strings:
+    scan for {text}
+    scan notes for {text}
+    scan page notes for {text}
+    scan group notes for {text}
+    scan person notes for {text}
+    scan location notes for {text}
+    scan time notes for {text}
+
+
+Miscellaneous:
+    calculate possibilities

@@ -55,7 +55,7 @@ User-mode:
     - link location {name} to page {page number}
     - link time {name} to page {page number}
     
-    - {killer name} killed {victim name}
+    - solved a murder
 
     - order {group name 1} before {group name 2}
     - order page {pagenumber 1} before {pagenumber 2}
