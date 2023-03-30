@@ -20,7 +20,7 @@ System commands:
 
 Read/list information:
     show page {page number}
-    show {name}
+    show person {name}
     show location {location}
     show time {time}
     show group {group}
@@ -87,7 +87,7 @@ Link existing entities:
 Unlink existing entities:
     remove pages from group {group name}
 
-    remove name from page {page number}
+    remove person from page {page number}
     remove location from page {page number}
     remove time from page {page number}
 
@@ -107,7 +107,7 @@ Change attributes:
 
 
 Delete entities:
-    remove {person name}
+    remove person {person name}
     remove group {group name}
     remove location {location name}
     remove time {time name}

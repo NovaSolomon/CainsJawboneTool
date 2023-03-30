@@ -78,29 +78,25 @@ class Terminal:
         
 
     def cmd_not_found(self):
-        print("Command not recognized. Use 'help' for directions")
+        print("Command not recognized. Maybe you forgot an argument?\nUse 'help' for directions")
         print()
 
     #Dev Commands
     def dev_new_page(self, cmd):
-        print(1)
-        print(cmd)
-        print(self.db_path)
+        pass
 
     def dev_edit_page(self, cmd):
-        print(2)
-        print(cmd)
+        pass
 
     def dev_delete_last_page(self, cmd):
-        print(3)
-        print(cmd)
+        pass
 
     def dev_exit(self, cmd):
         self.mode = "User"
 
     dev_commands = {
         ("new", "page"): dev_new_page,
-        ("edit", "page", "_"): dev_edit_page,
+        ("edit", "page"): dev_edit_page,
         ("delete", "last", "page"): dev_delete_last_page,
         ("exit", "dev", "mode"): dev_exit,
     }
@@ -191,6 +187,125 @@ class Terminal:
     def add_new_location_to_page(self, cmd):
         pass
 
+    def add_new_time_to_page(self, cmd):
+        pass
+
+    def add_pages_to_new_group(self, cmd):
+        pass
+
+    def add_page_to_new_group(self, cmd):
+        pass
+
+    def add_nickname(self, cmd):
+        pass
+
+    def add_note(self, cmd):
+        pass
+
+
+    ##Link existing entities
+    def add_pages_to_group(self, cmd):
+        pass
+
+    def add_page_to_group(self, cmd):
+        pass
+
+
+    def link_person_to_page(self, cmd):
+        pass
+
+    def link_location_to_page(self, cmd):
+        pass
+
+    def link_time_to_page(self, cmd):
+        pass
+
+
+    def solved_a_murder(self, cmd):
+        pass
+
+
+    def order_groups(self, cmd):
+        pass
+
+    def order_pages(self, cmd):
+        pass
+
+
+    ##Unlink existing entities
+    def remove_pages_from_group(self, cmd):
+        pass
+
+
+    def remove_name_from_page(self, cmd):
+        pass
+
+    def remove_location_from_page(self, cmd):
+        pass
+
+    def remove_time_from_page(self, cmd):
+        pass
+
+
+    def edit_killer_registry(self, cmd):
+        pass
+
+
+    def remove_group_relations(self, cmd):
+        pass
+
+    def remove_page_relations(self, cmd):
+        pass
+
+
+    ##Change attributes
+    def edit_page(self, cmd):
+        pass
+
+    def edit_location(self, cmd):
+        pass
+
+    def edit_time(self, cmd):
+        pass
+
+
+    ##Delete entities
+    def remove_person(self, cmd):
+        pass
+
+    def remove_group(self, cmd):
+        pass
+
+    def remove_location(self, cmd):
+        pass
+
+    def remove_time(self, cmd):
+        pass
+
+
+    ##Unify two entities
+    def merge_groups(self, cmd):
+        pass
+
+    def merge_people(self, cmd):
+        pass
+
+    def merge_locations(self, cmd):
+        pass
+
+    def merge_times(self, cmd):
+        pass
+
+
+    ##Find appearances of strings
+    def scan_for_text(self, cmd):
+        pass
+
+
+    ##Miscellaneous
+    def calculate_possibilities(self, cmd):
+        pass
+
 
     user_commands = {
         ("dev", "mode",): enter_dev_mode,
@@ -199,4 +314,82 @@ class Terminal:
         ("list", "backups",): list_backups,
         ("save", "state", "as", "backup",): save_state_as_backup,
         ("help",): help,
+
+
+        ("show", "page"): show_page,
+        ("show", "person"): show_person,
+        ("show", "location"): show_location,
+        ("show", "time"): show_time,
+        ("show", "group"): show_group,
+
+        ("list", "relations"): list_relations,
+        ("list", "people"): list_people,
+        ("list", "groups"): list_groups,
+        ("list", "locations"): list_locations,
+        ("list", "times"): list_times,
+
+        ("list", "pages", "with"): list_pages_with,
+        ("list", "pages", "where"): list_pages_where,
+
+
+        ("new", "person"): new_person,
+        ("new", "group"): new_group,
+        ("new", "location"): new_location,
+        ("new", "time"): new_time,
+
+        ("add", "new", "person", "to", "page"): add_new_person_to_page,
+        ("add", "new", "location", "to", "page"): add_new_location_to_page,
+        ("add", "new", "time", "to", "page"): add_new_time_to_page,
+        ("add", "pages", "to", "new", "group"): add_pages_to_new_group,
+        ("add", "page", "_", "to", "new", "group"): add_page_to_new_group,
+        ("add", "nickname", "to"): add_nickname,
+        ("add", "note", "to"): add_note,
+
+
+        ("add", "pages", "to", "group"): add_pages_to_group,
+        ("add", "page", "_", "to", "group"): add_page_to_group,
+
+        ("link", "_", "to", "page"): link_person_to_page,
+        ("link", "location", "_", "to", "page"): link_location_to_page,
+        ("link", "time", "_", "to", "page"): link_time_to_page,
+
+        ("solved", "a", "murder"): solved_a_murder,
+
+        ("order", "_", "before"): order_groups,
+        ("oder", "page", "_", "before"): order_pages,
+
+
+        ("remove", "pages", "from", "group"): remove_pages_from_group,
+        
+        ("remove", "person", "from", "page"): remove_person,
+        ("remove", "location", "from", "page"): remove_location,
+        ("remove", "time", "from", "page"): remove_time,
+
+        ("edit", "killer", "registry"): edit_killer_registry,
+
+        ("remove", "group", "relations"): remove_group_relations,
+        ("remove", "page", "relations"): remove_page_relations,
+
+
+        ("edit", "page"): edit_page,
+        ("edit", "location"): edit_location,
+        ("edit", "time"): edit_time,
+
+
+        ("remove", "person"): remove_person,
+        ("remove", "group"): remove_group,
+        ("remove", "location"): remove_location,
+        ("remove", "time"): remove_time,
+
+
+        ("merge", "groups"): merge_groups,
+        ("merge", "people"): merge_people,
+        ("merge", "locations"): merge_locations,
+        ("merge", "times"): merge_times,
+
+
+        ("scan",): scan_for_text,
+
+
+        ("calculate", "possibilities"): calculate_possibilities,
     }
