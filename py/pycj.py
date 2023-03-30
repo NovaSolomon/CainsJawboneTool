@@ -1,8 +1,38 @@
+import sqlite3
+from termcolor import colored
+
+colors = {
+    "User-Prompt": 'magenta',
+    "Dev-Prompt": 'green',
+    "Input-Prompt": 'cyan',
+    "Content-Output": 'white',
+    "Structure-Output": 'yellow',
+    "Error": 'red',
+}
+
+def print_e(text):
+    print(colored(text, colors["Error"]))
+
+def output(category, value, newline = False):
+    e = ' '
+    if newline:
+        e = '\n'
+    print(colored(category, colors["Structure-Output"]), end=e)
+    print(colored(value, colors["Content-Output"]))
+
+def input_prompt(text, newline = False):
+    e = ' '
+    if newline:
+        e = '\n'
+    print(colored(text, colors["Input-Prompt"]), end=e)
+    return input()
+
 class Terminal:
     user_commands = None
 
-    def __init__(self, db_path = "./data.db") -> None:
-        self.db_path = db_path
+    def __init__(self, db_path) -> None:
+        self.db_con = sqlite3.connect(db_path)
+        self.db_cur = self.db_con.cursor()
         self.mode = "User"
         self.done = False
 
@@ -13,9 +43,9 @@ class Terminal:
 
     def get_command(self):
         if self.mode == "User":
-            print(">>>", end=' ')
+            print(colored(">>>", colors["User-Prompt"]), end=' ')
         elif self.mode == "Dev":
-            print("<?>", end=' ')
+            print(colored("<?>", colors["Dev-Prompt"]), end=' ')
         self.cmd = input()
 
     def match_and_execute(self):
@@ -39,7 +69,7 @@ class Terminal:
                 case (True, False):
                     match c:
                         case '"':
-                            print("No quotes allowed within words")
+                            print_e("No quotes allowed within words")
                             return
                         case ' ':
                             w = False
@@ -56,10 +86,10 @@ class Terminal:
                         if c == ' ':
                             qp = False
                         else:
-                            print("There must be a space after a closing quote")
+                            print_e("There must be a space after a closing quote")
                             return
         if q:
-            print("Unclosed quotes!")
+            print_e("Unclosed quotes!")
             return
         matched = False
         length = len(cmd)
@@ -78,18 +108,69 @@ class Terminal:
         
 
     def cmd_not_found(self):
-        print("Command not recognized. Maybe you forgot an argument?\nUse 'help' for directions")
+        print_e("Command not recognized. Maybe you forgot an argument?\nUse 'help' for directions")
         print()
 
     #Dev Commands
     def dev_new_page(self, cmd):
-        pass
+        c = self.db_cur.execute(
+            "SELECT COUNT(bookpage) FROM pages;"
+            ).fetchone()[0]
+        if c < 100:
+            page_nr = c + 1
+            txt = input_prompt(f"Enter Text for page {page_nr}:", True)
+            txt = txt.replace('"', '$')
+            if txt == '':
+                return
+            self.db_cur.execute(
+                f'INSERT INTO pages (booktext) VALUES ("{txt}");'
+                )
+            self.db_con.commit()
+        else:
+            print_e("No room for additional pages!")
 
     def dev_edit_page(self, cmd):
-        pass
+        if len(cmd) > 3:
+            print_e(f"Expected 1 argument (bookpage) but received {len(cmd) - 2}")
+            return
+        page = 0
+        try:
+            page = int(cmd[2])
+        except:
+            print_e("Argument must be integer between 1 and 100")
+            return
+        if page > self.db_cur.execute(
+            "SELECT COUNT(bookpage) FROM pages;"
+            ).fetchone()[0] or page <= 0:
+            print_e("Requested page does not exist")
+            return
+        crnt_text = self.db_cur.execute(
+            f"SELECT booktext FROM pages WHERE bookpage={page};"
+            ).fetchone()[0]
+        output(f"Booktext page {page}:", crnt_text.replace('$', '"'), True)
+        new_text = input_prompt("Enter new text:", True).replace('"', '$')
+        if new_text == '': return
+        self.db_cur.execute(
+            f'UPDATE pages SET booktext="{new_text}" WHERE bookpage={page};'
+        )
+        self.db_con.commit()
+        
 
     def dev_delete_last_page(self, cmd):
-        pass
+        last_page = self.db_cur.execute(
+            "SELECT COUNT(bookpage) FROM pages;"
+        ).fetchone()[0]
+        if last_page == 0:
+            print_e("No Pages to delete")
+            return
+        ans = ''
+        while ans not in ('Y', 'n'):
+            ans = input_prompt(f"Are you sure you want to delete page {last_page}? (Y/n)")
+        if ans == 'n': return
+        self.db_cur.execute(
+            f"DELETE FROM pages WHERE bookpage={last_page};"
+        )
+        self.db_con.commit()
 
     def dev_exit(self, cmd):
         self.mode = "User"
