@@ -18,14 +18,31 @@ def output(category, value, newline = False):
     if newline:
         e = '\n'
     print(colored(category, colors["Structure-Output"]), end=e)
-    print(colored(value, colors["Content-Output"]))
+    print(colored(value.replace('$', '"'), colors["Content-Output"]))
 
-def input_prompt(text, newline = False):
+def input_prompt(text, newline = False, limit = 2000):
     e = ' '
     if newline:
         e = '\n'
     print(colored(text, colors["Input-Prompt"]), end=e)
-    return input()
+    i = input().replace('"', '$')
+    while len(i) > limit:
+        print_e(f"Must be {limit} characters or less")
+        print(colored(text, colors["Input-Prompt"]), end=e)
+        i = input().replace('"', '$')
+    return i
+
+def check_args(cmd, cmd_len, arg_len) -> bool:
+    n = len(cmd) - cmd_len
+    if n == arg_len: return True
+    if arg_len == 1:
+        print_e(f"Expected 1 argument, but received {n}")    
+    else:
+        print_e(f"Expected {arg_len} arguments, but received {n}")
+    return False
+
+def hug(text, wrapper = '"'):
+    return wrapper + text + wrapper
 
 class Terminal:
     user_commands = None
@@ -113,13 +130,13 @@ class Terminal:
 
     #Dev Commands
     def dev_new_page(self, cmd):
+        if not check_args(cmd, 2, 0): return
         c = self.db_cur.execute(
             "SELECT COUNT(bookpage) FROM pages;"
             ).fetchone()[0]
         if c < 100:
             page_nr = c + 1
             txt = input_prompt(f"Enter Text for page {page_nr}:", True)
-            txt = txt.replace('"', '$')
             if txt == '':
                 return
             self.db_cur.execute(
@@ -130,9 +147,7 @@ class Terminal:
             print_e("No room for additional pages!")
 
     def dev_edit_page(self, cmd):
-        if len(cmd) > 3:
-            print_e(f"Expected 1 argument (bookpage) but received {len(cmd) - 2}")
-            return
+        if not check_args(cmd, 2, 1): return
         page = 0
         try:
             page = int(cmd[2])
@@ -147,8 +162,8 @@ class Terminal:
         crnt_text = self.db_cur.execute(
             f"SELECT booktext FROM pages WHERE bookpage={page};"
             ).fetchone()[0]
-        output(f"Booktext page {page}:", crnt_text.replace('$', '"'), True)
-        new_text = input_prompt("Enter new text:", True).replace('"', '$')
+        output(f"Booktext page {page}:", crnt_text, True)
+        new_text = input_prompt("Enter new text:", True)
         if new_text == '': return
         self.db_cur.execute(
             f'UPDATE pages SET booktext="{new_text}" WHERE bookpage={page};'
@@ -157,6 +172,7 @@ class Terminal:
         
 
     def dev_delete_last_page(self, cmd):
+        if not check_args(cmd, 3, 0): return
         last_page = self.db_cur.execute(
             "SELECT COUNT(bookpage) FROM pages;"
         ).fetchone()[0]
@@ -173,6 +189,7 @@ class Terminal:
         self.db_con.commit()
 
     def dev_exit(self, cmd):
+        if not check_args(cmd, 3, 0): return
         self.mode = "User"
 
     dev_commands = {
@@ -187,9 +204,11 @@ class Terminal:
     #User Commands
     ##System Commands
     def enter_dev_mode(self, cmd):
+        if not check_args(cmd, 2, 0): return
         self.mode = "Dev"
 
     def exit_cli(self, cmd):
+        if not check_args(cmd, 1, 0): return
         self.done = True
 
     def back_up_db(self, cmd):
@@ -201,7 +220,8 @@ class Terminal:
     def save_state_as_backup(self, cmd):
         pass
 
-    def help(self, cmd = None):
+    def help(self, cmd):
+        if not check_args(cmd, 1, 0): return
         f = open("help-message.txt", 'r')
         f_content = f.read()
         print(f_content)
@@ -250,16 +270,72 @@ class Terminal:
 
     ##Make new entities
     def new_person(self, cmd):
-        pass
+        if not check_args(cmd, 2, 0): return
+        name = input_prompt("Name:", limit=30)
+        if name == '': return
+        if 0 < self.db_cur.execute(
+            f'SELECT COUNT(*) FROM people WHERE name="{name}";'
+        ).fetchone()[0]:
+            print_e("Person already exists")
+            return
+        self.db_cur.execute(
+            f'INSERT INTO people (name) VALUES ("{name}");'
+        )
+        self.db_con.commit()
 
     def new_group(self, cmd):
-        pass
+        if not check_args(cmd, 2, 0): return
+        name = input_prompt("Group name:", limit=30)
+        if name == '': return
+        if 0 < self.db_cur.execute(
+            f'SELECT COUNT(*) FROM groups WHERE name="{name}";'
+        ).fetchone()[0]:
+            print_e("Group already exists")
+            return
+        self.db_cur.execute(
+            f'INSERT INTO groups (name) VALUES ("{name}");'
+        )
+        self.db_con.commit()
 
     def new_location(self, cmd):
-        pass
+        if not check_args(cmd, 2, 0): return
+        name = input_prompt("Name:", limit=50)
+        if name == '': return
+        if 0 < self.db_cur.execute(
+            f'SELECT COUNT(*) FROM locations WHERE name="{name}";'
+        ).fetchone()[0]:
+            print_e("Location already exists")
+            return
+        level = input_prompt("Level:", limit=30)
+        if level == '':
+            self.db_cur.execute(
+                f'INSERT INTO locations (name) VALUES ("{name}");'
+            )
+        else:
+            self.db_cur.execute(
+                f'INSERT INTO locations (name, level) VALUES ("{name}", "{level}");'
+            )
+        self.db_con.commit()
 
     def new_time(self, cmd):
-        pass
+        if not check_args(cmd, 2, 0): return
+        name = input_prompt("Name:", limit=50)
+        if name == '': return
+        if 0 < self.db_cur.execute(
+            f'SELECT COUNT(*) FROM times WHERE name="{name}";'
+        ).fetchone()[0]:
+            print_e("Time already exists")
+            return
+        level = input_prompt("Level:", limit=30)
+        if level == '':
+            self.db_cur.execute(
+                f'INSERT INTO times (name) VALUES ("{name}");'
+            )
+        else:
+            self.db_cur.execute(
+                f'INSERT INTO times (name, level) VALUES ("{name}", "{level}");'
+            )
+        self.db_con.commit()
 
 
     def add_new_person_to_page(self, cmd):
