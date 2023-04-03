@@ -11,3 +11,6 @@ cj/Cargo.lock
 
 # Python stuff
 py/__pycache__
+
+klondike.log
+
