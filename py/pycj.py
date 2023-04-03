@@ -32,6 +32,11 @@ def input_prompt(text, newline = False, limit = 2000):
         i = input().replace('"', '$')
     return i
 
+def print_s(text, newline = True):
+    e = ''
+    if newline: e = "\n"
+    print(colored(text, colors["Structure-Output"]), end=e)
+
 def check_args(cmd, cmd_len, arg_len) -> bool:
     n = len(cmd) - cmd_len
     if n == arg_len: return True
@@ -206,6 +211,8 @@ class Terminal:
     def enter_dev_mode(self, cmd):
         if not check_args(cmd, 2, 0): return
         self.mode = "Dev"
+        print_e("Warning: Only use dev mode if you're absolutely sure of what you're doing."+
+                "\nIf not, you can leave with 'exit dev mode'")
 
     def exit_cli(self, cmd):
         if not check_args(cmd, 1, 0): return
@@ -270,42 +277,44 @@ class Terminal:
 
     ##Make new entities
     def new_person(self, cmd):
-        if not check_args(cmd, 2, 0): return
+        if not check_args(cmd, 2, 0): return False
         name = input_prompt("Name:", limit=30)
-        if name == '': return
+        if name == '': return False
         if 0 < self.db_cur.execute(
             f'SELECT COUNT(*) FROM people WHERE name="{name}";'
         ).fetchone()[0]:
             print_e("Person already exists")
-            return
+            return False
         self.db_cur.execute(
             f'INSERT INTO people (name) VALUES ("{name}");'
         )
         self.db_con.commit()
+        return True
 
     def new_group(self, cmd):
-        if not check_args(cmd, 2, 0): return
+        if not check_args(cmd, 2, 0): return False
         name = input_prompt("Group name:", limit=30)
-        if name == '': return
+        if name == '': return False
         if 0 < self.db_cur.execute(
             f'SELECT COUNT(*) FROM groups WHERE name="{name}";'
         ).fetchone()[0]:
             print_e("Group already exists")
-            return
+            return False
         self.db_cur.execute(
             f'INSERT INTO groups (name) VALUES ("{name}");'
         )
         self.db_con.commit()
+        return True
 
     def new_location(self, cmd):
-        if not check_args(cmd, 2, 0): return
+        if not check_args(cmd, 2, 0): return False
         name = input_prompt("Name:", limit=50)
-        if name == '': return
+        if name == '': return False
         if 0 < self.db_cur.execute(
             f'SELECT COUNT(*) FROM locations WHERE name="{name}";'
         ).fetchone()[0]:
             print_e("Location already exists")
-            return
+            return False
         level = input_prompt("Level:", limit=30)
         if level == '':
             self.db_cur.execute(
@@ -316,16 +325,17 @@ class Terminal:
                 f'INSERT INTO locations (name, level) VALUES ("{name}", "{level}");'
             )
         self.db_con.commit()
+        return True
 
     def new_time(self, cmd):
-        if not check_args(cmd, 2, 0): return
+        if not check_args(cmd, 2, 0): return False
         name = input_prompt("Name:", limit=50)
-        if name == '': return
+        if name == '': return False
         if 0 < self.db_cur.execute(
             f'SELECT COUNT(*) FROM times WHERE name="{name}";'
         ).fetchone()[0]:
             print_e("Time already exists")
-            return
+            return False
         level = input_prompt("Level:", limit=30)
         if level == '':
             self.db_cur.execute(
@@ -336,28 +346,211 @@ class Terminal:
                 f'INSERT INTO times (name, level) VALUES ("{name}", "{level}");'
             )
         self.db_con.commit()
+        return True
+
 
 
     def add_new_person_to_page(self, cmd):
-        pass
+        if not check_args(cmd, 5, 1): return
+        page = 0
+        try:
+            page = int(cmd[5])
+        except:
+            print_e("Argument has to be an integer")
+            return
+        if page < 1 or page > 100:
+            print_e("Bookpage must be between 1 and 100")
+            return
+        print_s("New person")
+        if not self.new_person(("new", "person")): return
+        self.db_cur.execute(
+            f"""INSERT INTO pages_people (page_number, person_id)
+            VALUES ({page}, (SELECT MAX(id) FROM people));"""
+        )
+        self.db_con.commit()
+
 
     def add_new_location_to_page(self, cmd):
-        pass
+        if not check_args(cmd, 5, 1): return
+        page = 0
+        try:
+            page = int(cmd[5])
+        except:
+            print_e("Argument has to be an integer")
+            return
+        if page < 1 or page > 100:
+            print_e("Bookpage must be between 1 and 100")
+            return
+        print_s("New location")
+        if not self.new_location(("new", "location")): return
+        self.db_cur.execute(
+            f"""INSERT INTO pages_locations (page_number, person_id)
+            VALUES ({page}, (SELECT MAX(id) FROM locations));"""
+        )
+        self.db_con.commit()
 
     def add_new_time_to_page(self, cmd):
-        pass
+        if not check_args(cmd, 5, 1): return
+        page = 0
+        try:
+            page = int(cmd[5])
+        except:
+            print_e("Argument has to be an integer")
+            return
+        if page < 1 or page > 100:
+            print_e("Bookpage must be between 1 and 100")
+            return
+        print_s("New time")
+        if not self.new_time(("new", "time")): return
+        self.db_cur.execute(
+            f"""INSERT INTO pages_times (page_number, time_id)
+            VALUES ({page}, (SELECT MAX(id) FROM times));"""
+        )
+        self.db_con.commit()
 
     def add_pages_to_new_group(self, cmd):
-        pass
+        if not check_args(cmd, 5, 0): return
+        pages = []
+        ans = 'tmp'
+        while ans != '':
+            ans = input_prompt("Page number:")
+            page = 0
+            try:
+                page = int(ans)
+            except:
+                if ans != '': print_e("Must be an integer")
+                continue
+            if page < 1 or page > 100:
+                print_e("Must be between 1 and 100")
+                continue
+            if page in pages:
+                print_e("Page already added")
+                continue
+            pages.append(page)
+        print()
+        print_s("New group")
+        if not self.new_group(("new", "group")): return
+        for page in pages:
+            self.db_cur.execute()
 
     def add_page_to_new_group(self, cmd):
-        pass
+        if not check_args(cmd, 6, 0): return
+        page = 0
+        try:
+            page = int(cmd[2])
+        except:
+            print_e("Bookpage must be an integer")
+            return
+        if page < 1 or page > 100:
+            print_e("Bookpage must be between 1 and 100")
+            return
+        print_s("New Group")
+        if not self.new_group(("new", "group")): return
+        self.db_cur.execute(
+            f"""INSERT INTO groups_pages (group_id, page_number)
+            VALUES ((SELECT MAX(*) FROM groups), {page});"""
+        )
+        self.db_con.commit()
 
     def add_nickname(self, cmd):
-        pass
+        if not check_args(cmd, 3, 1): return
+        name = cmd[3]
+        id = self.db_cur.execute(
+            f"""SELECT id FROM people
+            WHERE name="{name}";"""
+        ).fetchone()
+        try:
+            id = id[0]
+        except:
+            print_e("Person doesn't exist")
+            return
+        nickname = input_prompt("Nickname:", limit=30)
+        if nickname == '': return
+        self.db_cur.execute(
+            f"""INSERT INTO nicknames (name, person_id)
+            VALUES ("{nickname}", {id});"""
+        )
+        self.db_con.commit()
 
     def add_note(self, cmd):
-        pass
+        if not check_args(cmd, 3, 2): return
+        category = cmd[3]
+        ident = cmd[4]
+        match category:
+            case "group":
+                if self.db_cur.execute(
+                    f"""SELECT COUNT(*) FROM groups
+                    WHERE name="{ident}";"""
+                ).fetchone()[0] == 0:
+                    print_e("Group doesn't exist")
+                    return
+                note = input_prompt("Note text:", True)
+                if note == "": return
+                id = self.db_cur.execute(
+                    f"""SELECT id FROM groups
+                    WHERE name="{ident}";"""
+                ).fetchone()[0]
+                self.db_cur.execute(
+                    f"""INSERT INTO notes (object, note_text, object_id)
+                    VALUES ("group", "{note}", {id});"""
+                )
+                self.db_con.commit()
+            case "person":
+                if self.db_cur.execute(
+                    f"""SELECT COUNT(*) FROM people
+                    WHERE name="{ident}";"""
+                ).fetchone()[0] == 0:
+                    print_e("Person doesn't exist")
+                    return
+                note = input_prompt("Note text:", True)
+                if note == "": return
+                id = self.db_cur.execute(
+                    f"""SELECT id FROM people
+                    WHERE name="{ident}";"""
+                ).fetchone()[0]
+                self.db_cur.execute(
+                    f"""INSERT INTO notes (object, note_text, object_id)
+                    VALUES ("person", "{note}", {id});"""
+                )
+                self.db_con.commit()
+            case "location" | "time":
+                table = category + "s"
+                if self.db_cur.execute(
+                    f"""SELECT COUNT(*) FROM {table}
+                    WHERE name="{ident}";"""
+                ).fetchone()[0] == 0:
+                    print_e(f"{category} doesn't exist")
+                    return
+                note = input_prompt("Note text:", True)
+                if note == "": return
+                id = self.db_cur.execute(
+                    f"""SELECT id FROM {table}
+                    WHERE name="{ident}";"""
+                ).fetchone()[0]
+                self.db_cur.execute(
+                    f"""INSERT INTO notes (object, note_text, object_id)
+                    VALUES ("{category}", "{note}", {id});"""
+                )
+                self.db_con.commit()
+            case "page":
+                id = 0
+                try:
+                    id = int(ident)
+                except:
+                    print_e("Page number must be integer")
+                    return
+                if id < 1 or 100 < id:
+                    print_e("Page number must be between 1 and 100")
+                    return
+                note = input_prompt("Note text:", True)
+                if note == "": return
+                self.db_cur.execute(
+                    f"""INSERT INTO notes (object, note_text, object_id)
+                    VALUES ("page", "{note}", {id});"""
+                )
+                self.db_con.commit()
+            case _:
+                print_e("Category doesn't exist")
 
 
     ##Link existing entities
