@@ -555,31 +555,229 @@ class Terminal:
 
     ##Link existing entities
     def add_pages_to_group(self, cmd):
-        pass
+        if not check_args(cmd, 4, 1): return
+        group = cmd[4]
+        if self.db_cur.execute(
+            f"""SELECT COUNT(*) FROM groups
+            WHERE name="{group}";"""
+        ).fetchone()[0] == 0:
+            print_e("Group doesn't exist")
+            return
+        pages = []
+        while True:
+            page = 0
+            ans = input_prompt("Page nr.:")
+            if ans == "": break
+            try:
+                page = int(ans)
+            except:
+                print_e("Must be integer")
+                continue
+            if page < 1 or 100 < page:
+                print_e("Must be between 1 and 100")
+                continue
+            if page in pages:
+                print_e("Already added")
+                continue
+            pages.append(page)
+        if pages == []: return
+        id = self.db_cur.execute(
+            f"""SELECT id FROM groups
+            WHERE name="{group}";"""
+        ).fetchone()[0]
+        for page in pages:
+            self.db_cur.execute(
+                f"""INSERT INTO groups_pages (group_id, page_number)
+                VALUES ({id}, {page});"""
+            )
+        self.db_con.commit()
 
     def add_page_to_group(self, cmd):
-        pass
+        if not check_args(cmd, 5, 1): return
+        group = cmd[5]
+        page = cmd[2]
+        try:
+            page = int(page)
+        except:
+            print_e("Page number must be integer")
+            return
+        if page < 1 or 100 < page:
+            print_e("Page bumber must be between 1 and 100")
+            return
+        if self.db_cur.execute(
+            f"""SELECT COUNT(*) FROM groups
+            WHERE name="{group}";"""
+        ).fetchone()[0] == 0:
+            print_e("Group doesn't exist")
+            return
+        id = self.db_cur.execute(
+            f"""SELECT id FROM groups
+            WHERE name="{group}";"""
+        )
+        self.db_cur.execute(
+            f"""INSERT INTO groups_pages (group_id, page_number)
+            VALUES ({id}, {page});"""
+        )
+        self.db_con.commit()
 
 
     def link_person_to_page(self, cmd):
-        pass
+        if not check_args(cmd, 4, 1): return
+        name = cmd[1]
+        page = cmd[4]
+        try:
+            page = int(page)
+        except:
+            print_e("Page number must be an integer")
+            return
+        if page < 1 or 100 < page:
+            print_e("Page number must be bewteen 1 and 100")
+            return
+        if self.db_cur.execute(
+            f"""SELECT COUNT(*) FROM people
+            WHERE name={name};"""
+        ).fetchone()[0] == 0:
+            print_e("Person doesn't exist")
+            return
+        id = self.db_cur.execute(
+            f"""SELECT id FROM people
+            WHERE name={name};"""
+        ).fetchone()[0]
+        self.db_cur.execute(
+            f"""INSERT INTO pages_people (page_number, person_id)
+            VALUES ({page}, {id});"""
+        )
+        self.db_con.commit()
 
     def link_location_to_page(self, cmd):
-        pass
+        if not check_args(cmd, 5, 1): return
+        location = cmd[2]
+        page = cmd[5]
+        try:
+            page = int(page)
+        except:
+            print_e("Page number must be an integer")
+            return
+        if page < 1 or 100 < page:
+            print_e("Page number must be between 1 and 100")
+            return
+        if self.db_cur.execute(
+            f"""SELECT COUNT(*) FROM locations
+            WHERE name="{location}";"""
+        ).fetchone()[0] == 0:
+            print_e("Location doesn't exist")
+            return
+        id = self.db_cur.execute(
+            f"""SELECT id FROM locations
+            WHERE name="{location}";"""
+        ).fetchone()[0]
+        self.db_cur.execute(
+            f"""INSERT INTO pages_locations (page_number, location_id)
+            VALUES ({page}, {id});"""
+        )
+        self.db_con.commit()
 
     def link_time_to_page(self, cmd):
-        pass
+        if not check_args(cmd, 5, 1): return
+        time = cmd[2]
+        page = cmd[5]
+        try:
+            page = int(page)
+        except:
+            print_e("Page number must be an integer")
+            return
+        if page < 1 or 100 < page:
+            print_e("Page number must be between 1 and 100")
+            return
+        if self.db_cur.execute(
+            f"""SELECT COUNT(*) FROM times
+            WHERE name="{time}";"""
+        ).fetchone()[0] == 0:
+            print_e("Time doesn't exist")
+            return
+        id = self.db_cur.execute(
+            f"""SELECT id FROM times
+            WHERE name="{time}";"""
+        ).fetchone()[0]
+        self.db_cur.execute(
+            f"""INSERT INTO pages_times (page_number, time_id)
+            VALUES ({page}, {id});"""
+        )
+        self.db_con.commit()
 
 
     def solved_a_murder(self, cmd):
-        pass
+        if not check_args(cmd, 3, 0): return
+        murderer = None
+        while True:
+            murderer = input_prompt("Murderer:")
+            if murderer == "": return
+            if self.db_cur.execute(
+                f"""SELECT COUNT(*) FROM people WHERE name="{murderer}";"""
+            ).fetchone()[0] == 0:
+                print_e("Person doesn't exist")
+                continue
+            break
+        victim = None
+        while True:
+            victim = input_prompt("Victim:")
+            if victim == "": return
+            if self.db_cur.execute(
+                f"""SELECT COUNT(*) FROM people WHERE name="{victim}";"""
+            ).fetchone()[0] == 0:
+                print_e("Person doesn't exist")
+                continue
+            break
+        self.db_cur.execute(
+            f"""INSERT INTO murders (killer_id, victim_id)
+            VALUES ((SELECT id FROM people WHERE name="{murderer}"),
+            (SELECT id FROM people WHERE name="{victim}"));"""
+        )
+        self.db_cur.execute(
+            f"""UPDATE people SET killer=1 WHERE name="{murderer}";
+            UPDATE people SET victim=1 WHERE name="{victim}";"""
+        )
+        self.db_con.commit()
 
 
     def order_groups(self, cmd):
-        pass
+        if not check_args(cmd, 3, 1): return
+        g1 = cmd[1]
+        g2 = cmd[3]
+        for g in (g1, g2):
+            if self.db_cur.execute(
+                f"""SELECT COUNT(*) FROM groups
+                WHERE name="{g}";"""
+            ).fetchone()[0] == 0:
+                print_e(f"Group {g} doesn't exist")
+                return
+        self.db_cur.execute(
+            f"""INSERT INTO relations (group_id1, group_id2)
+            VALUES ((SELECT id FROM groups WHERE name="{g1}"), 
+            (SELECT id FROM groups WHERE name="{g2}"));"""
+        )
+        self.db_con.commit()
+        #ADD CONTRADICTION CHECKER
 
     def order_pages(self, cmd):
-        pass
+        if not check_args(cmd, 5, 1): return
+        p1 = cmd[2]
+        p2 = cmd[5]
+        try:
+            p1 = int(p1)
+            p2 = int(p2)
+        except:
+            print_e("Page numbers must be integers")
+            return
+        if p1 not in range(1, 101) or p2 not in range(1, 101):
+            print_e("Page numbers must be between 1 and 100")
+            return
+        self.db_cur.execute(
+            f"""INSERT INTO page_relations (book_page1, book_page2)
+            VALUES ({p1}, {p2});"""
+        )
+        self.db_con.commit()
+        #ADD CONTRADICTION CHECKER
 
 
     ##Unlink existing entities
@@ -706,7 +904,7 @@ class Terminal:
         ("solved", "a", "murder"): solved_a_murder,
 
         ("order", "_", "before"): order_groups,
-        ("oder", "page", "_", "before"): order_pages,
+        ("order", "page", "_", "before", "page"): order_pages,
 
 
         ("remove", "pages", "from", "group"): remove_pages_from_group,

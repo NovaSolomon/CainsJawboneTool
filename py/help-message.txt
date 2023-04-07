@@ -81,7 +81,7 @@ Link existing entities:
     solved a murder
 
     order {group name 1} before {group name 2}
-    order page {pagenumber 1} before {pagenumber 2}
+    order page {pagenumber 1} before page {pagenumber 2}
 
 
 Unlink existing entities:
