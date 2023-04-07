@@ -50,8 +50,6 @@ def hug(text, wrapper = '"'):
     return wrapper + text + wrapper
 
 class Terminal:
-    user_commands = None
-
     def __init__(self, db_path) -> None:
         self.db_con = sqlite3.connect(db_path)
         self.db_cur = self.db_con.cursor()
@@ -132,6 +130,60 @@ class Terminal:
     def cmd_not_found(self):
         print_e("Command not recognized. Maybe you forgot an argument?\nUse 'help' for directions")
         print()
+
+    def in_db(self, obj, ident, msg = True):
+        match obj:
+            case "page":
+                try:
+                    ident = int(ident)
+                except:
+                    if msg: print_e("Bookpage must be a number")
+                    return (False, 0)
+                if ident < 1 or 100 < ident:
+                    if msg: print_e("Bookpage must be between 1 and 100")
+                    return (False, 0)
+                if self.db_cur.execute(
+                        f"""SELECT COUNT(*) FROM pages
+                        WHERE bookpage={ident};"""
+                        ).fetchone()[0] == 0:
+                    if msg: print_e("Bookpage has not been added yet")
+                    return (False, 0)
+                return (True, ident)
+            case "group" | "person" | "nickname" | "location" | "time":
+                if obj == "person":
+                    cat = "people"
+                else:
+                    cat = obj + "s"
+                if self.db_cur.execute(
+                        f"""SELECT COUNT(*) FROM {cat}
+                            WHERE name={hug(ident)};"""
+                            ).fetchone()[0] == 0:
+                    if msg: print_e(f"{obj} {ident} doesn't exist")
+                    return (False, 0)
+                i = self.db_cur.execute(
+                        f"""SELECT id FROM {cat}
+                        WHERE name={hug(ident)};"""
+                        ).fetchone()[0]
+                return (True, i)
+            case "nick_p":
+                check, p_id = self.in_db("person", ident, False)
+                if check:
+                    return (True, p_id)
+                else:
+                    check, n_id = self.in_db("nickname", ident, False)
+                if not check:
+                    if msg: print_e(f"Person with name or nickname {ident} doesn't exist")
+                    return (False, 0)
+                p_id = self.db_cur.execute(
+                        f"""SELECT person_id FROM nicknames
+                        WHERE name={hug(ident)};"""
+                        ).fetchone()[0]
+                return (True, p_id)
+            case _:
+                if msg: print_e("Category {obj} doesn't exist")
+                return (False, 0)
+
+
 
     #Dev Commands
     def dev_new_page(self, cmd):
@@ -280,9 +332,7 @@ class Terminal:
         if not check_args(cmd, 2, 0): return False
         name = input_prompt("Name:", limit=30)
         if name == '': return False
-        if 0 < self.db_cur.execute(
-            f'SELECT COUNT(*) FROM people WHERE name="{name}";'
-        ).fetchone()[0]:
+        if self.in_db("nick_p", name, msg=False)[0]:
             print_e("Person already exists")
             return False
         self.db_cur.execute(
@@ -295,9 +345,7 @@ class Terminal:
         if not check_args(cmd, 2, 0): return False
         name = input_prompt("Group name:", limit=30)
         if name == '': return False
-        if 0 < self.db_cur.execute(
-            f'SELECT COUNT(*) FROM groups WHERE name="{name}";'
-        ).fetchone()[0]:
+        if self.in_db("group", name, False)[0]:
             print_e("Group already exists")
             return False
         self.db_cur.execute(
@@ -310,9 +358,7 @@ class Terminal:
         if not check_args(cmd, 2, 0): return False
         name = input_prompt("Name:", limit=50)
         if name == '': return False
-        if 0 < self.db_cur.execute(
-            f'SELECT COUNT(*) FROM locations WHERE name="{name}";'
-        ).fetchone()[0]:
+        if self.in_db("location", name, False)[0]:
             print_e("Location already exists")
             return False
         level = input_prompt("Level:", limit=30)
@@ -331,9 +377,7 @@ class Terminal:
         if not check_args(cmd, 2, 0): return False
         name = input_prompt("Name:", limit=50)
         if name == '': return False
-        if 0 < self.db_cur.execute(
-            f'SELECT COUNT(*) FROM times WHERE name="{name}";'
-        ).fetchone()[0]:
+        if self.in_db("time", name, False)[0]:
             print_e("Time already exists")
             return False
         level = input_prompt("Level:", limit=30)
@@ -352,15 +396,8 @@ class Terminal:
 
     def add_new_person_to_page(self, cmd):
         if not check_args(cmd, 5, 1): return
-        page = 0
-        try:
-            page = int(cmd[5])
-        except:
-            print_e("Argument has to be an integer")
-            return
-        if page < 1 or page > 100:
-            print_e("Bookpage must be between 1 and 100")
-            return
+        check, page = self.in_db("page", cmd[5])
+        if not check: return
         print_s("New person")
         if not self.new_person(("new", "person")): return
         self.db_cur.execute(
@@ -372,15 +409,8 @@ class Terminal:
 
     def add_new_location_to_page(self, cmd):
         if not check_args(cmd, 5, 1): return
-        page = 0
-        try:
-            page = int(cmd[5])
-        except:
-            print_e("Argument has to be an integer")
-            return
-        if page < 1 or page > 100:
-            print_e("Bookpage must be between 1 and 100")
-            return
+        check, page = self.in_db("page", cmd[5])
+        if not check: return
         print_s("New location")
         if not self.new_location(("new", "location")): return
         self.db_cur.execute(
@@ -391,15 +421,8 @@ class Terminal:
 
     def add_new_time_to_page(self, cmd):
         if not check_args(cmd, 5, 1): return
-        page = 0
-        try:
-            page = int(cmd[5])
-        except:
-            print_e("Argument has to be an integer")
-            return
-        if page < 1 or page > 100:
-            print_e("Bookpage must be between 1 and 100")
-            return
+        check, page = self.in_db("page", cmd[5])
+        if not check: return
         print_s("New time")
         if not self.new_time(("new", "time")): return
         self.db_cur.execute(
@@ -411,59 +434,44 @@ class Terminal:
     def add_pages_to_new_group(self, cmd):
         if not check_args(cmd, 5, 0): return
         pages = []
-        ans = 'tmp'
-        while ans != '':
-            ans = input_prompt("Page number:")
+        while True:
             page = 0
-            try:
-                page = int(ans)
-            except:
-                if ans != '': print_e("Must be an integer")
-                continue
-            if page < 1 or page > 100:
-                print_e("Must be between 1 and 100")
-                continue
+            ans = input_prompt("Page nr.:")
+            if ans == "": break
+            check, page = self.in_db("page", ans)
+            if not check: continue
             if page in pages:
-                print_e("Page already added")
+                print_e("Already added")
                 continue
             pages.append(page)
+        if pages == []: return
         print()
         print_s("New group")
         if not self.new_group(("new", "group")): return
         for page in pages:
-            self.db_cur.execute()
+            self.db_cur.execute(
+                    f"""INSERT INTO groups_pages (group_id, page_number)
+                    VALUES ((SELECT MAX(id) FROM groups), {page});"""
+                    )
+        self.db_con.commit()
 
     def add_page_to_new_group(self, cmd):
         if not check_args(cmd, 6, 0): return
-        page = 0
-        try:
-            page = int(cmd[2])
-        except:
-            print_e("Bookpage must be an integer")
-            return
-        if page < 1 or page > 100:
-            print_e("Bookpage must be between 1 and 100")
-            return
+        check, page = self.in_db("page", cmd[2])
+        if not check: return
         print_s("New Group")
         if not self.new_group(("new", "group")): return
         self.db_cur.execute(
             f"""INSERT INTO groups_pages (group_id, page_number)
-            VALUES ((SELECT MAX(*) FROM groups), {page});"""
+            VALUES ((SELECT MAX(id) FROM groups), {page});"""
         )
         self.db_con.commit()
 
     def add_nickname(self, cmd):
         if not check_args(cmd, 3, 1): return
         name = cmd[3]
-        id = self.db_cur.execute(
-            f"""SELECT id FROM people
-            WHERE name="{name}";"""
-        ).fetchone()
-        try:
-            id = id[0]
-        except:
-            print_e("Person doesn't exist")
-            return
+        check, id = self.in_db("nick_p", name)
+        if not check: return
         nickname = input_prompt("Nickname:", limit=30)
         if nickname == '': return
         self.db_cur.execute(
@@ -478,70 +486,38 @@ class Terminal:
         ident = cmd[4]
         match category:
             case "group":
-                if self.db_cur.execute(
-                    f"""SELECT COUNT(*) FROM groups
-                    WHERE name="{ident}";"""
-                ).fetchone()[0] == 0:
-                    print_e("Group doesn't exist")
-                    return
+                check, id = self.in_db("group", ident)
+                if not check: return
                 note = input_prompt("Note text:", True)
                 if note == "": return
-                id = self.db_cur.execute(
-                    f"""SELECT id FROM groups
-                    WHERE name="{ident}";"""
-                ).fetchone()[0]
                 self.db_cur.execute(
                     f"""INSERT INTO notes (object, note_text, object_id)
                     VALUES ("group", "{note}", {id});"""
                 )
                 self.db_con.commit()
             case "person":
-                if self.db_cur.execute(
-                    f"""SELECT COUNT(*) FROM people
-                    WHERE name="{ident}";"""
-                ).fetchone()[0] == 0:
-                    print_e("Person doesn't exist")
-                    return
+                check, id = self.in_db("nick_p", ident)
+                if not check: return
                 note = input_prompt("Note text:", True)
                 if note == "": return
-                id = self.db_cur.execute(
-                    f"""SELECT id FROM people
-                    WHERE name="{ident}";"""
-                ).fetchone()[0]
                 self.db_cur.execute(
                     f"""INSERT INTO notes (object, note_text, object_id)
                     VALUES ("person", "{note}", {id});"""
                 )
                 self.db_con.commit()
             case "location" | "time":
-                table = category + "s"
-                if self.db_cur.execute(
-                    f"""SELECT COUNT(*) FROM {table}
-                    WHERE name="{ident}";"""
-                ).fetchone()[0] == 0:
-                    print_e(f"{category} doesn't exist")
-                    return
+                check, id = self.in_db(category, ident)
+                if not check: return
                 note = input_prompt("Note text:", True)
                 if note == "": return
-                id = self.db_cur.execute(
-                    f"""SELECT id FROM {table}
-                    WHERE name="{ident}";"""
-                ).fetchone()[0]
                 self.db_cur.execute(
                     f"""INSERT INTO notes (object, note_text, object_id)
                     VALUES ("{category}", "{note}", {id});"""
                 )
                 self.db_con.commit()
             case "page":
-                id = 0
-                try:
-                    id = int(ident)
-                except:
-                    print_e("Page number must be integer")
-                    return
-                if id < 1 or 100 < id:
-                    print_e("Page number must be between 1 and 100")
-                    return
+                check, id = self.in_db("page", ident)
+                if not check: return
                 note = input_prompt("Note text:", True)
                 if note == "": return
                 self.db_cur.execute(
@@ -557,34 +533,20 @@ class Terminal:
     def add_pages_to_group(self, cmd):
         if not check_args(cmd, 4, 1): return
         group = cmd[4]
-        if self.db_cur.execute(
-            f"""SELECT COUNT(*) FROM groups
-            WHERE name="{group}";"""
-        ).fetchone()[0] == 0:
-            print_e("Group doesn't exist")
-            return
+        check, id = self.in_db("group", group)
+        if not check: return
         pages = []
         while True:
             page = 0
             ans = input_prompt("Page nr.:")
             if ans == "": break
-            try:
-                page = int(ans)
-            except:
-                print_e("Must be integer")
-                continue
-            if page < 1 or 100 < page:
-                print_e("Must be between 1 and 100")
-                continue
+            check, page = self.in_db("page", ans)
+            if not check: continue
             if page in pages:
                 print_e("Already added")
                 continue
             pages.append(page)
         if pages == []: return
-        id = self.db_cur.execute(
-            f"""SELECT id FROM groups
-            WHERE name="{group}";"""
-        ).fetchone()[0]
         for page in pages:
             self.db_cur.execute(
                 f"""INSERT INTO groups_pages (group_id, page_number)
@@ -596,24 +558,10 @@ class Terminal:
         if not check_args(cmd, 5, 1): return
         group = cmd[5]
         page = cmd[2]
-        try:
-            page = int(page)
-        except:
-            print_e("Page number must be integer")
-            return
-        if page < 1 or 100 < page:
-            print_e("Page bumber must be between 1 and 100")
-            return
-        if self.db_cur.execute(
-            f"""SELECT COUNT(*) FROM groups
-            WHERE name="{group}";"""
-        ).fetchone()[0] == 0:
-            print_e("Group doesn't exist")
-            return
-        id = self.db_cur.execute(
-            f"""SELECT id FROM groups
-            WHERE name="{group}";"""
-        )
+        check, page = self.in_db("page", page)
+        if not check: return
+        check, id = self.in_db("group", group)
+        if not check: return
         self.db_cur.execute(
             f"""INSERT INTO groups_pages (group_id, page_number)
             VALUES ({id}, {page});"""
@@ -625,24 +573,10 @@ class Terminal:
         if not check_args(cmd, 4, 1): return
         name = cmd[1]
         page = cmd[4]
-        try:
-            page = int(page)
-        except:
-            print_e("Page number must be an integer")
-            return
-        if page < 1 or 100 < page:
-            print_e("Page number must be bewteen 1 and 100")
-            return
-        if self.db_cur.execute(
-            f"""SELECT COUNT(*) FROM people
-            WHERE name={name};"""
-        ).fetchone()[0] == 0:
-            print_e("Person doesn't exist")
-            return
-        id = self.db_cur.execute(
-            f"""SELECT id FROM people
-            WHERE name={name};"""
-        ).fetchone()[0]
+        check, page = self.in_db("page", page)
+        if not check: return
+        check, id = self.in_db("nick_p", name)
+        if not check: return
         self.db_cur.execute(
             f"""INSERT INTO pages_people (page_number, person_id)
             VALUES ({page}, {id});"""
@@ -653,24 +587,10 @@ class Terminal:
         if not check_args(cmd, 5, 1): return
         location = cmd[2]
         page = cmd[5]
-        try:
-            page = int(page)
-        except:
-            print_e("Page number must be an integer")
-            return
-        if page < 1 or 100 < page:
-            print_e("Page number must be between 1 and 100")
-            return
-        if self.db_cur.execute(
-            f"""SELECT COUNT(*) FROM locations
-            WHERE name="{location}";"""
-        ).fetchone()[0] == 0:
-            print_e("Location doesn't exist")
-            return
-        id = self.db_cur.execute(
-            f"""SELECT id FROM locations
-            WHERE name="{location}";"""
-        ).fetchone()[0]
+        check, page = self.in_db("page", page)
+        if not check: return
+        check, id = self.in_db("location", location)
+        if not check: return
         self.db_cur.execute(
             f"""INSERT INTO pages_locations (page_number, location_id)
             VALUES ({page}, {id});"""
@@ -681,24 +601,10 @@ class Terminal:
         if not check_args(cmd, 5, 1): return
         time = cmd[2]
         page = cmd[5]
-        try:
-            page = int(page)
-        except:
-            print_e("Page number must be an integer")
-            return
-        if page < 1 or 100 < page:
-            print_e("Page number must be between 1 and 100")
-            return
-        if self.db_cur.execute(
-            f"""SELECT COUNT(*) FROM times
-            WHERE name="{time}";"""
-        ).fetchone()[0] == 0:
-            print_e("Time doesn't exist")
-            return
-        id = self.db_cur.execute(
-            f"""SELECT id FROM times
-            WHERE name="{time}";"""
-        ).fetchone()[0]
+        check, page = self.in_db("page", page)
+        if not check: return
+        check, id = self.in_db("time", time)
+        if not check: return
         self.db_cur.execute(
             f"""INSERT INTO pages_times (page_number, time_id)
             VALUES ({page}, {id});"""
@@ -712,21 +618,15 @@ class Terminal:
         while True:
             murderer = input_prompt("Murderer:")
             if murderer == "": return
-            if self.db_cur.execute(
-                f"""SELECT COUNT(*) FROM people WHERE name="{murderer}";"""
-            ).fetchone()[0] == 0:
-                print_e("Person doesn't exist")
-                continue
+            check, m_id = self.in_db("nick_p", murderer)
+            if not check: continue
             break
         victim = None
         while True:
             victim = input_prompt("Victim:")
             if victim == "": return
-            if self.db_cur.execute(
-                f"""SELECT COUNT(*) FROM people WHERE name="{victim}";"""
-            ).fetchone()[0] == 0:
-                print_e("Person doesn't exist")
-                continue
+            check, v_id = self.in_db("nick_p", victim)
+            if not check: continue
             break
         self.db_cur.execute(
             f"""INSERT INTO murders (killer_id, victim_id)
